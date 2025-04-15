@@ -1,4 +1,7 @@
 import random
+
+import numpy as np
+import torch
 from loguru import logger
 
 
@@ -14,7 +17,7 @@ class SimpleTokenizer:
 
     def __init__(self):
         self.vocab = {}
-        self.vocab_size = 1
+        self.vocab_size = 2
         self.token_to_id = {}
         self.id_to_token = {}
 
@@ -48,10 +51,11 @@ class SimpleTokenizer:
             tokens = text.split()
             for token in tokens:
                 self.add_token(token.lower())
-        self.reset_token(0, "?")
+        self.reset_token(0, " ")
+        self.reset_token(1, ".")
         logger.info("初始化完成，词库大小:{}", self.vocab_size)
 
-    def encode(self, text, max_length=None, pad=True):
+    def encode(self, text, max_length=None, pad=False):
         """
         将texts编码成id序列
         :param text: 输入文本
@@ -75,4 +79,30 @@ class SimpleTokenizer:
         :return: tokens
         """
         tokens = [self.id_to_token.get(token_id, ' ') for token_id in token_ids]
-        return "".join(tokens)
+        return " ".join(tokens)
+
+    def padding(self, tokens, seq_len):
+        if len(tokens) < seq_len:
+            tokens.extend([0] * (seq_len - len(tokens)))
+            return tokens
+        else:
+            return tokens[:seq_len]
+
+    def random_sample(self, dataset, batch_size, seq_len):
+        samples = random.sample(dataset, batch_size)
+        enc_inputs = []
+        dec_inputs = []
+        outputs = []
+        for sample in samples:
+            sample_encode = self.encode(sample)
+            length = len(sample_encode)
+            enc_idx = random.randint(1, length-2)
+            dec_idx = random.randint(enc_idx, length-2)
+            enc_inputs.append(self.padding(sample_encode[:enc_idx], seq_len))
+            dec_inputs.append(self.padding(sample_encode[:dec_idx], seq_len))
+            outputs.append(self.padding(sample_encode[:dec_idx+1], seq_len))
+        return (
+            torch.from_numpy(np.array(enc_inputs)),
+            torch.from_numpy(np.array(dec_inputs)),
+            torch.from_numpy(np.array(outputs))
+        )

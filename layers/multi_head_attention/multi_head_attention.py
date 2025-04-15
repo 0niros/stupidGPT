@@ -1,6 +1,8 @@
 import torch
 from torch import nn
 
+from utils.device import choose_device
+
 
 class MultiHeadAttentionLayer(nn.Module):
     def __init__(self, embed_dim, num_heads, dropout=0.1):
@@ -18,12 +20,12 @@ class MultiHeadAttentionLayer(nn.Module):
         self.head_dim = embed_dim // num_heads
 
         # 线性层
-        self.q_linear = nn.Linear(embed_dim, embed_dim)
-        self.k_linear = nn.Linear(embed_dim, embed_dim)
-        self.v_linear = nn.Linear(embed_dim, embed_dim)
+        self.q_linear = nn.Linear(embed_dim, embed_dim, device=choose_device())
+        self.k_linear = nn.Linear(embed_dim, embed_dim, device=choose_device())
+        self.v_linear = nn.Linear(embed_dim, embed_dim, device=choose_device())
 
         # 输出线性层
-        self.out_linear = nn.Linear(embed_dim, embed_dim)
+        self.out_linear = nn.Linear(embed_dim, embed_dim, device=choose_device())
 
         # Dropout
         self.dropout = nn.Dropout(dropout)

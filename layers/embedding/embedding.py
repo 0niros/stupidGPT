@@ -3,6 +3,9 @@ import math
 import torch
 from torch import nn
 
+from utils.device import choose_device
+
+
 class EmbeddingLayer(nn.Module):
     def __init__(self, vocab_size, embedding_dim, max_len=16, dropout=0.1):
         """
@@ -19,7 +22,7 @@ class EmbeddingLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         # Token embedding: 将token id映射到嵌入向量
-        self.token_embedding = nn.Embedding(vocab_size, embedding_dim)
+        self.token_embedding = nn.Embedding(vocab_size, embedding_dim, device=choose_device())
 
         # Position Encoding: 添加位置信息
         self.position_encoding = self.create_position_encoding()
@@ -34,7 +37,6 @@ class EmbeddingLayer(nn.Module):
         # unsqueeze(1)：将张量在第1维度上增加一维，使其变为列向量，形状：(max_len, 1)
         position = torch.arange(0, self.max_len).unsqueeze(1)
 
-        # TODO
         div_term = torch.exp(torch.arange(0, self.embedding_dim, 2) * -(math.log(10000.0) / self.embedding_dim))
 
         position_encoding = torch.zeros(self.max_len, self.embedding_dim)
@@ -50,6 +52,7 @@ class EmbeddingLayer(nn.Module):
         :return: 嵌入向量序列，形状：(batch_size, seq_len, embedding_dim)
         """
         # 获取token embedding, 形状：(batch_size, seq_len, embedding_dim)
+        input_token_ids = input_token_ids.to(choose_device())
         token_embed = self.token_embedding(input_token_ids)
 
         # 缩放嵌入向量,论文中提到的技巧
@@ -58,6 +61,8 @@ class EmbeddingLayer(nn.Module):
         # Position encoding，把输入的位置信息添加到嵌入向量中
         seq_len = input_token_ids.size(1)
         position_encoding = self.position_encoding[:, :seq_len, :] # 截取需要的长度即可
+        position_encoding = position_encoding.to(choose_device())
+        token_embed = token_embed.to(choose_device())
 
         embedding = token_embed + position_encoding # (batch_size, seq_len, embedding_dim)
 

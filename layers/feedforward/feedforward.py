@@ -1,5 +1,7 @@
 from torch import nn
 
+from utils.device import choose_device
+
 
 class FeedForwardLayer(nn.Module):
     def __init__(self, embed_dim, hidden_dim, dropout=0.1):
@@ -8,13 +10,13 @@ class FeedForwardLayer(nn.Module):
         self.hidden_dim = hidden_dim
         self.dropout = nn.Dropout(dropout)
         # 第一层线形变换：embed_dim -> hidden_dim
-        self.linear1 = nn.Linear(embed_dim, hidden_dim)
+        self.linear1 = nn.Linear(embed_dim, hidden_dim, device=choose_device())
 
         # 激活函数
         self.activation = nn.ReLU()
 
         # 第二层线形变换：hidden_dim -> embed_dim
-        self.linear2 = nn.Linear(hidden_dim, embed_dim)
+        self.linear2 = nn.Linear(hidden_dim, embed_dim, device=choose_device())
 
     def forward(self, input_tensor):
         """

@@ -1,5 +1,7 @@
 from torch import nn
 
+from utils.device import choose_device
+
 
 class AddAndNormLayer(nn.Module):
     def __init__(self, embed_dim, dropout=0.1):
@@ -11,7 +13,7 @@ class AddAndNormLayer(nn.Module):
         super(AddAndNormLayer, self).__init__()
         self.embed_dim = embed_dim
         self.dropout = nn.Dropout(dropout)
-        self.layer_norm = nn.LayerNorm(embed_dim)
+        self.layer_norm = nn.LayerNorm(embed_dim, device=choose_device())
 
     def forward(self, input_tensor, sub_layer_output):
         """

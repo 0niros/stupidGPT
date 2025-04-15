@@ -5,6 +5,8 @@ from layers.embedding.embedding import EmbeddingLayer
 from transformer.encoder.encoder import EncoderLayer
 from transformer.decoder.decoder import DecoderLayer
 from mask.mask import create_padding_mask, create_combine_mask, create_causal_mask
+from utils.device import choose_device
+
 
 class TransformerConfig:
     def __init__(self, batch_size, vocab_size, embedding_dim, num_heads, hidden_dim, num_encoder_layers, num_decoder_layers, max_len, dropout=0.1):
@@ -29,7 +31,7 @@ class TransformerConfig:
         self.batch_size = batch_size
 
     def get_train_file_name(self):
-        return f"train-{self.vocab_size}_{self.embedding_dim}_{self.num_heads}_{self.hidden_dim}_{self.num_encoder_layers}_{self.num_decoder_layers}_{self.max_len}_{self.dropout}.bin"
+        return f"model_{self.vocab_size}_{self.embedding_dim}_{self.num_heads}_{self.hidden_dim}_{self.num_encoder_layers}_{self.num_decoder_layers}_{self.max_len}.bin"
 
 
 class TransformerModel(nn.Module):
@@ -41,16 +43,16 @@ class TransformerModel(nn.Module):
         self.enc_embedding = EmbeddingLayer(config.vocab_size, config.embedding_dim, config.max_len, config.dropout)
 
         # Encoder堆叠
-        self.encoder = nn.ModuleList([EncoderLayer(config.embedding_dim, config.num_heads, config.hidden_dim, config.dropout) for _ in range(config.num_encoder_layers)])
+        self.encoder = nn.Sequential(*[EncoderLayer(config.embedding_dim, config.num_heads, config.hidden_dim, config.dropout) for _ in range(config.num_encoder_layers)])
 
         # Embedding层
         self.dec_embedding = EmbeddingLayer(config.vocab_size, config.embedding_dim, config.max_len, config.dropout)
 
         # Decoder堆叠
-        self.decoder = nn.ModuleList([DecoderLayer(config.embedding_dim, config.num_heads, config.hidden_dim, config.dropout) for _ in range(config.num_decoder_layers)])
+        self.decoder = nn.Sequential(*[DecoderLayer(config.embedding_dim, config.num_heads, config.hidden_dim, config.dropout) for _ in range(config.num_decoder_layers)])
 
         # 输出层
-        self.linear = nn.Linear(config.embedding_dim, config.vocab_size)
+        self.linear = nn.Linear(config.embedding_dim, config.vocab_size, device=choose_device())
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, enc_input_token_ids, dec_input_token_ids):
@@ -68,7 +70,7 @@ class TransformerModel(nn.Module):
         )
 
         # Encoder Embedding
-        embedding_enc_input = self.enc_embedding.forward(enc_input_token_ids)
+        embedding_enc_input = self.enc_embedding(enc_input_token_ids)
 
         # Encoders
         encoder_output = None
@@ -76,7 +78,7 @@ class TransformerModel(nn.Module):
             encoder_output = encoder(embedding_enc_input, enc_mask)
 
         # Decoder Embedding
-        embedding_dec_input = self.dec_embedding.forward(dec_input_token_ids)
+        embedding_dec_input = self.dec_embedding(dec_input_token_ids)
 
         # Decoders
         decoder_output = None
@@ -85,7 +87,8 @@ class TransformerModel(nn.Module):
 
         # Linear
         linear_output = self.linear(decoder_output)
-        # Softmax
-        softmax_output = self.softmax(linear_output)
 
-        return softmax_output
+        # Softmax
+        # 交叉熵函数不需要softmax softmax_output = self.softmax(linear_output)
+
+        return linear_output
