@@ -321,7 +321,7 @@ class TransformerModel(nn.Module):
 ## 效果
 
 ### 训练
-![](https://github.com/0niros/stupidGPT/doc/image/train.png)
+![](https://github.com/0niros/stupidGPT/blob/master/doc/image/train.png)
 
 ### 推理
-![](https://github.com/0niros/stupidGPT/doc/image/infer.png)
+![](https://github.com/0niros/stupidGPT/blob/master/doc/image/infer.png)
